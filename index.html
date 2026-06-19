@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ridgeline Crane — Park City, Utah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --gold:       #C9963A;
+      --gold-hover: #DBA94A;
+      --white:      #F5F3EF;
+      --muted:      rgba(220, 215, 205, 0.68);
+      --dark:       #0D0C0B;
+
+      /* One gutter rule, applied at every level. Never flush to the edge. */
+      --gutter: clamp(24px, 7vw, 120px);
+      --col-max: 640px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Barlow', sans-serif;
+      background: var(--dark);
+      overflow-x: hidden;
+    }
+
+    /* ─────────────────────────────
+       NAV
+    ───────────────────────────── */
+    .nav {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
+      height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-inline: var(--gutter);
+      gap: 32px;
+    }
+
+    .nav__logo {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    /* No box. The white glow is painted from the logo's own alpha channel
+       via stacked drop-shadows, so it hugs the mountain + lettering
+       silhouette exactly and fades into the video with zero hard edges. */
+    .nav__logo-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav__logo-badge img {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+      /* tight, gentle halo — enough to lift the logo off the video,
+         not so wide it reaches the top edge of the screen */
+      filter:
+        drop-shadow(0 0  2px rgba(255, 255, 255, 0.80))
+        drop-shadow(0 0  5px rgba(255, 255, 255, 0.55))
+        drop-shadow(0 0  9px rgba(255, 255, 255, 0.30));
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 38px;
+      list-style: none;
+      margin-left: auto;
+    }
+
+    .nav__links a {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(245, 243, 239, 0.75);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav__links a:hover { color: var(--white); }
+
+    .nav__cta {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dark);
+      background: var(--gold);
+      padding: 12px 26px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .nav__cta:hover { background: var(--gold-hover); }
+
+    /* Hamburger — hidden on desktop */
+    .nav__hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 44px;
+      height: 44px;
+      padding: 10px;
+      background: rgba(13, 12, 11, 0.45);
+      border: 1px solid rgba(245, 243, 239, 0.18);
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .nav__hamburger span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: var(--white);
+      border-radius: 2px;
+      transition: transform 0.25s ease, opacity 0.2s ease;
+    }
+
+    /* Animate into an X when open */
+    .nav__hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav__hamburger.is-open span:nth-child(2) { opacity: 0; }
+    .nav__hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Mobile dropdown — full-width panel with large, easy tap rows */
+    .nav__mobile {
+      position: absolute;
+      top: 68px;
+      left: var(--gutter);
+      right: var(--gutter);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      background: rgba(17, 16, 14, 0.94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(245, 243, 239, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+      transform-origin: top center;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav__mobile.is-open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .nav__mobile a {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(245, 243, 239, 0.88);
+      text-decoration: none;
+      text-align: center;
+      padding: 20px 16px;        /* tall, glove-friendly tap targets */
+      border-radius: 10px;
+      transition: background 0.18s, color 0.18s;
+    }
+
+    .nav__mobile a + a {
+      border-top: 1px solid rgba(245, 243, 239, 0.07);
+    }
+
+    .nav__mobile a:active { background: rgba(201, 150, 58, 0.18); color: var(--white); }
+
+    /* ─────────────────────────────
+       HERO
+    ───────────────────────────── */
+    .hero {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      min-height: 640px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Video — NO filters, keep it razor sharp */
+    .hero__video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+    }
+
+    /* Two-layer gradient: dark on the left (text), fades to the action on the right */
+    .hero__overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(
+          100deg,
+          rgba(10, 9, 8, 0.90) 0%,
+          rgba(10, 9, 8, 0.72) 38%,
+          rgba(10, 9, 8, 0.34) 64%,
+          rgba(10, 9, 8, 0.10) 100%
+        ),
+        linear-gradient(
+          to bottom,
+          rgba(10, 9, 8, 0.40) 0%,
+          transparent 20%,
+          transparent 76%,
+          rgba(10, 9, 8, 0.55) 100%
+        );
+    }
+
+    /* ─────────────────────────────
+       CONTENT COLUMN
+       — lives inside its own constrained container,
+         never touches the viewport edge.
+    ───────────────────────────── */
+    .hero__content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: calc(var(--col-max) + var(--gutter));
+      padding-inline: var(--gutter);
+      padding-top: 88px; /* clear the nav */
+    }
+
+    /* Eyebrow */
+    .hero__eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.3s forwards;
+    }
+
+    .hero__eyebrow-line {
+      width: 30px;
+      height: 2px;
+      background: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .hero__eyebrow-text {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    /* Headline — vertical rhythm: 28px to the subtext below */
+    .hero__headline {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: clamp(56px, 8.5vw, 124px);
+      line-height: 0.92;
+      letter-spacing: -0.005em;
+      text-transform: uppercase;
+      color: var(--white);
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.55s forwards;
+    }
+
+    .hero__headline em {
+      font-style: normal;
+      color: var(--gold);
+    }
+
+    /* Subtext — looser line-height, constrained width so lines don't run long */
+    .hero__sub {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 300;
+      font-size: clamp(15px, 1.5vw, 17px);
+      line-height: 1.62;
+      color: var(--muted);
+      max-width: 460px;
+      margin-bottom: 38px;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.8s forwards;
+    }
+
+    /* Button row — each button sized by its own padding, not stretched */
+    .hero__actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 1.0s forwards;
+    }
+
+    .btn-primary,
+    .btn-ghost {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      padding: 15px 36px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      color: var(--dark);
+      background: var(--gold);
+      border: 2px solid var(--gold);
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-hover);
+      border-color: var(--gold-hover);
+    }
+
+    .btn-ghost {
+      color: var(--white);
+      background: transparent;
+      border: 2px solid rgba(245, 243, 239, 0.35);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--white);
+    }
+
+    /* ─────────────────────────────
+       BOTTOM TRUST STRIP
+    ───────────────────────────── */
+    .hero__badge {
+      position: absolute;
+      bottom: 32px;
+      left: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-inline: var(--gutter);
+      opacity: 0;
+      animation: fadeIn 1s ease 1.6s forwards;
+    }
+
+    .hero__badge-item {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 400;
+      font-size: 10.5px;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: rgba(220, 215, 205, 0.40);
+    }
+
+    .hero__badge-sep {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--gold);
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    /* "made by kellan" credit — bottom right */
+    .hero__credit {
+      position: absolute;
+      bottom: 30px;
+      right: var(--gutter);
+      z-index: 2;
+      font-family: 'Barlow', sans-serif;
+      font-weight: 400;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: rgba(220, 215, 205, 0.40);
+      text-decoration: none;
+      transition: color 0.2s;
+      opacity: 0;
+      animation: fadeIn 1s ease 1.8s forwards;
+    }
+
+    .hero__credit:hover { color: var(--gold); }
+
+    /* ─────────────────────────────
+       ANIMATIONS
+    ───────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ─────────────────────────────
+       MOBILE
+    ───────────────────────────── */
+    @media (max-width: 768px) {
+      .nav { height: 72px; }
+      .nav__links { display: none; }
+      .nav__cta { display: none; }      /* hide top call button on mobile */
+      .nav__hamburger { display: flex; } /* show hamburger instead */
+
+      .hero__content { padding-top: 96px; }
+
+      .hero__badge {
+        bottom: 58px;   /* sit above the credit line */
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .hero__badge-item:last-child,
+      .hero__badge-item:nth-last-child(2) { display: none; } /* drop the long one on small screens */
+
+      .hero__credit { bottom: 24px; left: var(--gutter); right: auto; } /* align with trust strip */
+
+      .hero__overlay {
+        background:
+          linear-gradient(
+            to bottom,
+            rgba(10, 9, 8, 0.55) 0%,
+            rgba(10, 9, 8, 0.60) 40%,
+            rgba(10, 9, 8, 0.72) 100%
+          );
+      }
+    }
+  </style>
+</head>
+<body>
+
+<section class="hero">
+
+  <video
+    class="hero__video"
+    src="assets/usethis.mp4"
+    autoplay muted loop playsinline
+    poster="assets/poster.png"
+  ></video>
+
+  <div class="hero__overlay"></div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="#" class="nav__logo">
+      <span class="nav__logo-badge">
+        <img src="assets/logo.webp" alt="Ridgeline Crane" />
+      </span>
+    </a>
+    <ul class="nav__links">
+      <li><a href="#">Services</a></li>
+      <li><a href="#">Fleet</a></li>
+      <li><a href="#">Projects</a></li>
+      <li><a href="#">About</a></li>
+    </ul>
+    <a href="tel:8016087810" class="nav__cta">Call 801-608-7810</a>
+
+    <!-- Mobile hamburger -->
+    <button class="nav__hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <!-- Mobile dropdown -->
+    <div class="nav__mobile" id="mobileMenu">
+      <a href="#">Services</a>
+      <a href="#">Fleet</a>
+      <a href="#">Projects</a>
+      <a href="#">About</a>
+    </div>
+  </nav>
+
+  <!-- HERO COPY -->
+  <div class="hero__content">
+
+    <div class="hero__eyebrow">
+      <div class="hero__eyebrow-line"></div>
+      <span class="hero__eyebrow-text">Family Owned &amp; Operated &nbsp;·&nbsp; Park City, Utah</span>
+    </div>
+
+    <h1 class="hero__headline">
+      When<br>
+      The <em>Lift</em><br>
+      Matters
+    </h1>
+
+    <p class="hero__sub">
+      Locally owned crane and rigging service based in Park City. We run a Liebherr 40-ton and 70-ton all-terrain fleet — steep mountain jobs, tight-access residential, commercial steel. No lift too hard.
+    </p>
+
+    <div class="hero__actions">
+      <a href="mailto:ridgelinecrane@gmail.com" class="btn-primary">Request a Quote</a>
+      <a href="tel:4356997713" class="btn-ghost">Call Paden &nbsp;435-699-7713</a>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM TRUST STRIP -->
+  <div class="hero__badge">
+    <span class="hero__badge-item">Trusted</span>
+    <div class="hero__badge-sep"></div>
+    <span class="hero__badge-item">Experienced</span>
+    <div class="hero__badge-sep"></div>
+    <span class="hero__badge-item">Professional</span>
+    <div class="hero__badge-sep"></div>
+    <span class="hero__badge-item">30+ Years Combined Experience</span>
+  </div>
+
+  <!-- Credit -->
+  <a class="hero__credit" href="https://getkellan.com" target="_blank" rel="noopener">made by kellan ;)</a>
+
+</section>
+
+<script>
+  (function () {
+    var btn  = document.getElementById('hamburger');
+    var menu = document.getElementById('mobileMenu');
+
+    function toggle(open) {
+      btn.classList.toggle('is-open', open);
+      menu.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open);
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggle(!menu.classList.contains('is-open'));
+    });
+
+    // Close when tapping a link or anywhere outside the menu
+    menu.addEventListener('click', function () { toggle(false); });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) toggle(false);
+    });
+  })();
+</script>
+
+</body>
+</html>
